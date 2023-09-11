@@ -1,0 +1,51 @@
+version: '3.5'
+services:
+  sql-server-db:
+    container_name: sql-server-db
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "Gupta@9560"
+      ACCEPT_EULA: "Y"
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+  ProductOwner.Microservice:
+   image: ${DOCKER_REGISTRY-}ownerservice:v1
+   build:
+    context: ./ProductOwner.Microservice
+    dockerfile: Dockerfile
+   environment: 
+    - ASPNETCORE_ENVIRONMENT=Production
+    - CONNECTIONSTRINGS__DEFAULTCONNECTION=Data Source=192.168.1.33,1433;Initial Catalog=ProductOwnerServiceDB;User Id=sa;Password=Gupta@9560
+    - RABBIT_MQ_SERVER=192.168.1.33
+    - RABBIT_MQ_USERNAME=guest
+    - RABBIT_MQ_PASSWORD=guest
+    - RABBITMQSETTINGS__EXCHANGENAME=OfferExchange
+    - RABBITMQSETTINGS__EXCHHANGETYPE=direct
+    - RABBITMQSETTINGS__QUEUENAME=offer_queue
+    - RABBITMQSETTINGS__ROUTEKEY=offer_route
+   ports:
+    - "4201:80"
+  ProductUser.Microservice:
+   image: ${DOCKER_REGISTRY-}userservice:v1
+   build:
+    context: ./ProductUser.Microservice
+    dockerfile: Dockerfile
+   environment:
+    - ASPNETCORE_ENVIRONMENT=Production   
+    - CONNECTIONSTRINGS__DEFAULTCONNECTION=Data Source=192.168.1.33,1433;Initial Catalog=ProductUserServiceDB;User Id=sa;Password=Gupta@9560
+    - RABBIT_MQ_SERVER=192.168.1.33
+    - RABBIT_MQ_USERNAME=guest
+    - RABBIT_MQ_PASSWORD=guest
+    - RABBITMQSETTINGS__EXCHANGENAME=OfferExchange
+    - RABBITMQSETTINGS__EXCHHANGETYPE=direct
+    - RABBITMQSETTINGS__QUEUENAME=offer_queue
+    - RABBITMQSETTINGS__ROUTEKEY=offer_route
+   ports:
+    - "4202:80"
+  
